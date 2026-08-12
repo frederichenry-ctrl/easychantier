@@ -1,127 +1,874 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-950 text-slate-100">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ChantierIA Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ChantierCopilot AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .view { display: none; animation: fadeUp .28s ease both; }
+  .view.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform:translateY(0);} }
+
+  .modal-overlay { transition: opacity .25s ease; }
+  .modal-sheet { transition: transform .3s cubic-bezier(.32,.72,0,1); }
+
+  /* Waveform animation */
+  .wave-bar { width: 4px; border-radius: 4px; background: #3b82f6; animation: waveScale 1.1s ease-in-out infinite; }
+  @keyframes waveScale { 0%,100% { transform: scaleY(.25);} 50% { transform: scaleY(1);} }
+
+  .mic-pulse { animation: micPulse 1.8s ease-out infinite; }
+  @keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(37,99,235,.55);} 100% { box-shadow: 0 0 0 24px rgba(37,99,235,0);} }
+
+  .tab-btn.active-tab { color: #60a5fa; }
+  .tab-btn.active-tab .tab-icon { color: #60a5fa; }
+
+  input[type="text"], input[type="number"], textarea, select {
+    background: #0f172a; border: 1px solid #1e293b; color: #f1f5f9;
+  }
+  input:focus, textarea:focus, select:focus { outline: 2px solid #2563eb; outline-offset: 1px; border-color: #2563eb; }
+
+  .card-tap:active { transform: scale(.98); }
+</style>
 </head>
-<body class="h-full">
-    <div id="root" class="h-full"></div>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<div class="max-w-md mx-auto min-h-screen relative bg-slate-950 flex flex-col">
 
-        function App() {
-            const [activeTab, setActiveTab] = useState('dashboard');
-            const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
-            const [isRecording, setIsRecording] = useState(false);
-            const [transcript, setTranscript] = useState('');
+  <!-- ===================== HEADER ===================== -->
+  <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 pt-4 pb-3">
+    <div class="flex items-center justify-between">
+      <button id="projectSelectorBtn" class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 max-w-[70%]">
+        <i data-lucide="building-2" class="w-4 h-4 text-blue-500 shrink-0"></i>
+        <span id="activeProjectName" class="text-sm font-semibold truncate">Résidence Les Tilleuls</span>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 shrink-0"></i>
+      </button>
+      <div id="netStatus" class="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span id="netStatusLabel">En ligne</span>
+      </div>
+    </div>
+  </header>
 
-            useEffect(() => {
-                lucide.createIcons();
-            }, [activeTab, isRecordingModalOpen]);
+  <!-- ===================== MAIN ===================== -->
+  <main class="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-32">
 
-            const handleStartRecording = () => {
-                setIsRecording(true);
-                setTranscript("Enregistrement en cours...");
-                setTimeout(() => {
-                    setTranscript("Constat lot 2 : Plaques posées. Fuite d'eau constatée logement 302, prévoir coffrage additionnel de 400€.");
-                }, 1500);
-            };
+    <!-- ---------- VIEW: DASHBOARD ---------- -->
+    <section id="view-dashboard" class="view active">
+      <h1 class="text-xl font-bold mb-1">Bonjour 👋</h1>
+      <p class="text-slate-400 text-sm mb-5">Voici l'état du chantier aujourd'hui.</p>
 
-            const handleStopRecording = () => {
-                setIsRecording(false);
-            };
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm text-slate-400">Avancement global</span>
+          <span id="progressPercentLabel" class="text-sm font-bold text-blue-400">62%</span>
+        </div>
+        <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden mb-4">
+          <div id="progressBar" class="h-full bg-blue-600 rounded-full" style="width:62%"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500"></i>
+              <span class="text-xs text-slate-400">Réserves ouvertes</span>
+            </div>
+            <p id="statOpenReserves" class="text-2xl font-bold">0</p>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="euro" class="w-4 h-4 text-emerald-500"></i>
+              <span class="text-xs text-slate-400">Avenants en cours</span>
+            </div>
+            <p id="statAvenantsTotal" class="text-2xl font-bold">0 €</p>
+          </div>
+        </div>
+      </div>
 
-            return (
-                <div className="flex h-full w-full bg-slate-950 text-slate-100 font-sans overflow-hidden">
-                    <div className="flex-1 flex flex-col h-full overflow-hidden relative max-w-md mx-auto w-full border-x border-slate-800">
-                        
-                        {/* Header */}
-                        <header className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
-                            <div>
-                                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">Résidence Les Pins</span>
-                                <h2 className="text-sm font-bold text-white">Chantier N°302</h2>
-                            </div>
-                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-xs">IA</div>
-                        </header>
+      <button id="ctaCopilot" class="w-full mb-6 bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-4 flex items-center gap-3 text-left active:scale-[.98] transition-transform">
+        <div class="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold text-sm">Copilote IA</p>
+          <p class="text-xs text-blue-100">Dictez votre point chantier, l'IA structure tout.</p>
+        </div>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-blue-100 shrink-0"></i>
+      </button>
 
-                        {/* Main Content */}
-                        <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
-                            {activeTab === 'dashboard' && (
-                                <div className="space-y-4">
-                                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
-                                        <span className="text-xs text-slate-400">Progression globale</span>
-                                        <div className="text-2xl font-bold">72 %</div>
-                                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                                            <div className="bg-blue-500 h-full w-[72%]"></div>
-                                        </div>
-                                    </div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-300">Activité récente</h2>
+      </div>
+      <div id="recentActivityList" class="space-y-3"></div>
+      <div id="emptyActivity" class="hidden text-center py-10 text-slate-500 text-sm">
+        <i data-lucide="clipboard-list" class="w-8 h-8 mx-auto mb-2 text-slate-700"></i>
+        Aucun rapport pour l'instant.<br>Appuyez sur le micro pour commencer.
+      </div>
+    </section>
 
-                                    <div onClick={() => setIsRecordingModalOpen(true)} className="bg-gradient-to-r from-blue-900/40 to-slate-900 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between cursor-pointer">
-                                        <div>
-                                            <span className="text-xs font-bold text-blue-400 uppercase">Assistant Vocal</span>
-                                            <h3 className="text-sm font-semibold text-white">Dictée vocale chantier</h3>
-                                        </div>
-                                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">🎙️</div>
-                                    </div>
-                                </div>
-                            )}
+    <!-- ---------- VIEW: RAPPORTS ---------- -->
+    <section id="view-rapports" class="view">
+      <h1 class="text-xl font-bold mb-4">Rapports</h1>
+      <div id="reportsList" class="space-y-3"></div>
+      <div id="emptyReports" class="hidden text-center py-16 text-slate-500 text-sm">
+        <i data-lucide="file-text" class="w-8 h-8 mx-auto mb-2 text-slate-700"></i>
+        Aucun compte-rendu généré.
+      </div>
+    </section>
 
-                            {activeTab === 'reports' && (
-                                <div className="space-y-3">
-                                    <h2 className="text-sm font-bold">Comptes-Rendus Générés</h2>
-                                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
-                                        <span className="text-xs text-blue-400 font-bold">CR #14 - Validation Chape</span>
-                                        <p className="text-xs text-slate-300">Pose des cloisons effectuée. Léger retard sur le raccordement électrique.</p>
-                                    </div>
-                                </div>
-                            )}
-                        </main>
+    <!-- ---------- VIEW: RESERVES ---------- -->
+    <section id="view-reserves" class="view">
+      <h1 class="text-xl font-bold mb-4">Réserves &amp; anomalies</h1>
+      <div class="flex gap-2 mb-4">
+        <button data-filter="Ouverte" class="reserve-filter-btn flex-1 text-xs font-semibold py-2 rounded-lg bg-blue-600 text-white">Ouvertes</button>
+        <button data-filter="Levée" class="reserve-filter-btn flex-1 text-xs font-semibold py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">Levées</button>
+        <button data-filter="Toutes" class="reserve-filter-btn flex-1 text-xs font-semibold py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">Toutes</button>
+      </div>
+      <div id="reservesList" class="space-y-3"></div>
+      <div id="emptyReserves" class="hidden text-center py-16 text-slate-500 text-sm">
+        <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto mb-2 text-slate-700"></i>
+        Aucune réserve dans cette catégorie.
+      </div>
+    </section>
 
-                        {/* Modal Vocal */}
-                        {isRecordingModalOpen && (
-                            <div className="fixed inset-0 z-50 bg-slate-950/95 p-6 flex flex-col justify-between">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-blue-400">Copilote Vocal IA</span>
-                                    <button onClick={() => setIsRecordingModalOpen(false)} className="text-slate-400 font-bold">✕</button>
-                                </div>
-                                <div className="text-center space-y-4">
-                                    <button 
-                                        onClick={isRecording ? handleStopRecording : handleStartRecording}
-                                        className={`w-20 h-20 rounded-full ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-blue-600'} text-white font-bold mx-auto flex items-center justify-center text-xl`}
-                                    >
-                                        🎙️
-                                    </button>
-                                    <p className="text-xs text-slate-300 italic">{transcript || "Appuyez sur le micro et parlez..."}</p>
-                                </div>
-                                <button onClick={() => { setIsRecordingModalOpen(false); setActiveTab('reports'); }} className="w-full bg-blue-600 text-white py-3 rounded-xl text-xs font-bold">
-                                    Générer le rapport par IA
-                                </button>
-                            </div>
-                        )}
+    <!-- ---------- VIEW: FINANCES ---------- -->
+    <section id="view-finances" class="view">
+      <h1 class="text-xl font-bold mb-1">Avenants &amp; finances</h1>
+      <p class="text-slate-400 text-sm mb-4">Travaux supplémentaires détectés à la voix.</p>
 
-                        {/* Bottom Nav */}
-                        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-3 bg-slate-950/90 border-t border-slate-800 flex justify-around text-xs">
-                            <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'text-blue-400 font-bold' : 'text-slate-400'}>Accueil</button>
-                            <button onClick={() => setIsRecordingModalOpen(true)} className="text-blue-500 font-bold">🎙️ Micro</button>
-                            <button onClick={() => setActiveTab('reports')} className={activeTab === 'reports' ? 'text-blue-400 font-bold' : 'text-slate-400'}>Rapports</button>
-                        </nav>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-5 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-slate-400 mb-1">Total à valider (HT)</p>
+          <p id="financeTotal" class="text-2xl font-bold text-emerald-400">0 €</p>
+        </div>
+        <button id="exportFinanceBtn" class="flex items-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Exporter
+        </button>
+      </div>
 
-                    </div>
-                </div>
-            );
-        }
+      <div id="avenantsList" class="space-y-3"></div>
+      <div id="emptyAvenants" class="hidden text-center py-16 text-slate-500 text-sm">
+        <i data-lucide="receipt" class="w-8 h-8 mx-auto mb-2 text-slate-700"></i>
+        Aucun avenant détecté pour l'instant.
+      </div>
+    </section>
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    </script>
+  </main>
+
+  <!-- ===================== BOTTOM NAV ===================== -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40">
+    <div class="max-w-md mx-auto relative">
+      <div class="bg-slate-900/95 backdrop-blur border-t border-slate-800 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+8px)] flex items-center justify-between">
+        <button data-tab="dashboard" class="tab-btn active-tab flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-500 text-[10px] font-medium">
+          <i data-lucide="layout-dashboard" class="tab-icon w-5 h-5"></i> Dashboard
+        </button>
+        <button data-tab="rapports" class="tab-btn flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-500 text-[10px] font-medium">
+          <i data-lucide="file-text" class="tab-icon w-5 h-5"></i> Rapports
+        </button>
+        <div class="flex-1"></div>
+        <button data-tab="reserves" class="tab-btn flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-500 text-[10px] font-medium">
+          <i data-lucide="alert-triangle" class="tab-icon w-5 h-5"></i> Réserves
+        </button>
+        <button data-tab="finances" class="tab-btn flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-500 text-[10px] font-medium">
+          <i data-lucide="euro" class="tab-icon w-5 h-5"></i> Finances
+        </button>
+      </div>
+      <!-- FAB Central -->
+      <button id="fabMic" class="mic-pulse absolute left-1/2 -translate-x-1/2 -top-7 w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-950/50 active:scale-95 transition-transform">
+        <i data-lucide="mic" class="w-7 h-7 text-white"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===================== MODAL: ENREGISTREMENT VOCAL IA ===================== -->
+  <div id="voiceModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0 bg-slate-950"></div>
+    <div class="relative max-w-md mx-auto h-full flex flex-col">
+
+      <!-- Step: recording -->
+      <div id="stepRecording" class="flex-1 flex flex-col">
+        <div class="flex items-center justify-between px-4 pt-5">
+          <button id="closeVoiceModal" class="w-9 h-9 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+          <span class="text-sm font-semibold text-slate-400">Copilote IA</span>
+          <span class="w-9"></span>
+        </div>
+
+        <div class="flex-1 flex flex-col items-center justify-center px-6">
+          <div id="waveformBox" class="flex items-end gap-1 h-16 mb-8 hidden">
+            <!-- bars injected by JS -->
+          </div>
+          <div id="idleMicIcon" class="w-24 h-24 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-8">
+            <i data-lucide="mic" class="w-9 h-9 text-blue-500"></i>
+          </div>
+          <p id="recordingStatusLabel" class="text-slate-400 text-sm mb-3 text-center">Appuyez pour dicter votre point chantier</p>
+          <div class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 min-h-[110px] mb-6">
+            <p class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Transcription live...</p>
+            <p id="liveTranscript" class="text-sm text-slate-200 leading-relaxed">—</p>
+          </div>
+        </div>
+
+        <div class="px-6 pb-10 flex flex-col items-center gap-4">
+          <button id="recordBtn" class="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center active:scale-95 transition-transform">
+            <i data-lucide="mic" class="w-8 h-8 text-white"></i>
+          </button>
+          <button id="processBtn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 rounded-xl py-3.5 font-semibold flex items-center justify-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4"></i> Traiter avec l'Agent IA
+          </button>
+        </div>
+      </div>
+
+      <!-- Step: processing -->
+      <div id="stepProcessing" class="hidden flex-1 flex flex-col items-center justify-center px-6">
+        <div class="w-16 h-16 rounded-full border-4 border-slate-800 border-t-blue-500 animate-spin mb-6"></div>
+        <p class="font-semibold mb-1">L'agent IA structure votre rapport</p>
+        <p class="text-slate-500 text-sm text-center">Extraction du compte-rendu, des réserves et des avenants...</p>
+      </div>
+
+      <!-- Step: result -->
+      <div id="stepResult" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between px-4 pt-5 pb-3">
+          <span class="text-sm font-semibold flex items-center gap-2">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> Traitement terminé
+          </span>
+          <button id="closeResultBtn" class="w-9 h-9 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="resultCardsWrap" class="flex-1 overflow-y-auto no-scrollbar px-4 pb-8 space-y-3"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: SELECTEUR PROJET ===================== -->
+  <div id="projectModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/80" id="projectModalOverlay"></div>
+    <div class="modal-sheet absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 pb-8">
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-4"></div>
+      <h3 class="font-semibold mb-3">Chantiers</h3>
+      <div id="projectListModal" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: DETAIL RESERVE ===================== -->
+  <div id="reserveDetailModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/80"></div>
+    <div class="modal-sheet absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 pb-8">
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-4"></div>
+      <div id="reserveDetailContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   ETAT & PERSISTENCE (Offline-first via localStorage)
+   ============================================================ */
+const STORAGE_KEY = "chantiercopilot_state_v1";
+
+const defaultState = {
+  activeProjectId: "p1",
+  projects: [
+    { id: "p1", name: "Résidence Les Tilleuls", address: "12 rue des Tilleuls, Le Mans", clientName: "SCI Beauséjour", overallProgressPercent: 62, status: "En cours" },
+    { id: "p2", name: "Villa Cormier", address: "8 allée du Cormier, Allonnes", clientName: "M. et Mme Cormier", overallProgressPercent: 34, status: "En cours" }
+  ],
+  reports: [],
+  reserves: [],
+  avenants: []
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.warn("Lecture locale impossible", e); }
+  return JSON.parse(JSON.stringify(defaultState));
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn("Sauvegarde locale impossible", e); }
+}
+
+let state = loadState();
+let currentReserveFilter = "Ouverte";
+let recognition = null;
+let isRecording = false;
+let finalTranscript = "";
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+function uid(prefix) { return prefix + "_" + Math.random().toString(36).slice(2, 9); }
+function euro(n) { return (n || 0).toLocaleString("fr-FR") + " €"; }
+function refreshIcons() { if (window.lucide) lucide.createIcons(); }
+function activeProject() { return state.projects.find(p => p.id === state.activeProjectId) || state.projects[0]; }
+
+const priorityStyles = {
+  "Haute": "bg-red-500/15 text-red-400 border-red-500/30",
+  "Moyenne": "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  "Basse": "bg-slate-500/15 text-slate-400 border-slate-500/30"
+};
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function switchTab(tab) {
+  $$(".view").forEach(v => v.classList.remove("active"));
+  $("#view-" + tab).classList.add("active");
+  $$(".tab-btn").forEach(b => b.classList.remove("active-tab"));
+  const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if (btn) btn.classList.add("active-tab");
+  renderAll();
+}
+$$(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+/* ============================================================
+   RENDU DASHBOARD
+   ============================================================ */
+function renderDashboard() {
+  const p = activeProject();
+  $("#activeProjectName").textContent = p.name;
+  $("#progressPercentLabel").textContent = p.overallProgressPercent + "%";
+  $("#progressBar").style.width = p.overallProgressPercent + "%";
+
+  const projReserves = state.reserves.filter(r => r.projectId === p.id);
+  const openReserves = projReserves.filter(r => r.status === "Ouverte");
+  $("#statOpenReserves").textContent = openReserves.length;
+
+  const projAvenants = state.avenants.filter(a => a.projectId === p.id);
+  const totalAvenants = projAvenants.reduce((s, a) => s + (Number(a.estimatedCostHT) || 0), 0);
+  $("#statAvenantsTotal").textContent = euro(totalAvenants);
+
+  const recentReports = state.reports.filter(r => r.projectId === p.id).slice(0, 5);
+  const list = $("#recentActivityList");
+  list.innerHTML = "";
+  $("#emptyActivity").classList.toggle("hidden", recentReports.length > 0);
+
+  recentReports.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "card-tap bg-slate-900 border border-slate-800 rounded-xl p-3.5 transition-transform";
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-2 mb-1.5">
+        <p class="font-semibold text-sm leading-snug">${r.title}</p>
+        <span class="text-[10px] shrink-0 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">${r.status}</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-2">${r.date} · ${r.weather || "—"}</p>
+      <p class="text-xs text-slate-400 line-clamp-2">${r.summary}</p>`;
+    list.appendChild(div);
+  });
+}
+
+/* ============================================================
+   RENDU RAPPORTS
+   ============================================================ */
+function renderReports() {
+  const p = activeProject();
+  const reports = state.reports.filter(r => r.projectId === p.id);
+  const list = $("#reportsList");
+  list.innerHTML = "";
+  $("#emptyReports").classList.toggle("hidden", reports.length > 0);
+
+  reports.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "bg-slate-900 border border-slate-800 rounded-xl p-4";
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <p class="font-semibold text-sm">${r.title}</p>
+        <span class="text-[10px] shrink-0 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">${r.status}</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-2">${r.date} · ${r.weather}</p>
+      <p class="text-sm text-slate-300 mb-3">${r.summary}</p>
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        ${(r.corpsEtat || []).map(c => `<span class="text-[10px] px-2 py-1 rounded-full bg-slate-800 text-slate-300">${c}</span>`).join("")}
+      </div>
+      <div class="flex gap-2">
+        <button class="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 py-2 rounded-lg" onclick="downloadReportPdf('${r.id}')">
+          <i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF
+        </button>
+        <button class="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 py-2 rounded-lg" onclick="shareReport('${r.id}')">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Partager
+        </button>
+      </div>`;
+    list.appendChild(div);
+  });
+  refreshIcons();
+}
+
+/* ============================================================
+   RENDU RESERVES
+   ============================================================ */
+function renderReserves() {
+  const p = activeProject();
+  let reserves = state.reserves.filter(r => r.projectId === p.id);
+  if (currentReserveFilter !== "Toutes") {
+    reserves = reserves.filter(r => r.status === currentReserveFilter);
+  }
+  const list = $("#reservesList");
+  list.innerHTML = "";
+  $("#emptyReserves").classList.toggle("hidden", reserves.length > 0);
+
+  reserves.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "card-tap bg-slate-900 border border-slate-800 rounded-xl p-3.5 transition-transform";
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-2 mb-1.5">
+        <p class="font-semibold text-sm leading-snug flex-1">${r.title}</p>
+        <span class="text-[10px] shrink-0 px-2 py-0.5 rounded-full border ${priorityStyles[r.priority]}">${r.priority}</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-1 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> ${r.location} · ${r.lotName}</p>
+      <p class="text-xs text-slate-400 mb-3">Sous-traitant : ${r.assignedToSubcontractor || "Non assigné"}</p>
+      <div class="flex gap-2">
+        ${r.status === "Ouverte" ? `
+        <button class="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg" onclick="markReserveResolved('${r.id}')">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i> Marquer comme levée
+        </button>
+        <button class="flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg" onclick="notifySubcontractor('${r.id}')">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+        </button>` : `
+        <span class="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 py-2 rounded-lg">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Réserve levée
+        </span>`}
+      </div>`;
+    list.appendChild(div);
+  });
+  refreshIcons();
+}
+$$(".reserve-filter-btn").forEach(b => b.addEventListener("click", () => {
+  currentReserveFilter = b.dataset.filter;
+  $$(".reserve-filter-btn").forEach(x => { x.classList.remove("bg-blue-600","text-white"); x.classList.add("bg-slate-900","border","border-slate-800","text-slate-400"); });
+  b.classList.remove("bg-slate-900","border","border-slate-800","text-slate-400");
+  b.classList.add("bg-blue-600","text-white");
+  renderReserves();
+}));
+function markReserveResolved(id) {
+  const r = state.reserves.find(x => x.id === id);
+  if (r) { r.status = "Levée"; saveState(); renderAll(); }
+}
+function notifySubcontractor(id) {
+  const r = state.reserves.find(x => x.id === id);
+  if (!r) return;
+  const text = `Bonjour, une réserve a été identifiée sur le chantier "${activeProject().name}" — ${r.location} (${r.lotName}) : ${r.title}. Merci de planifier une intervention.`;
+  shareText(text, "Relance sous-traitant");
+}
+
+/* ============================================================
+   RENDU FINANCES / AVENANTS
+   ============================================================ */
+function renderFinances() {
+  const p = activeProject();
+  const avenants = state.avenants.filter(a => a.projectId === p.id);
+  const total = avenants.reduce((s, a) => s + (Number(a.estimatedCostHT) || 0), 0);
+  $("#financeTotal").textContent = euro(total);
+
+  const list = $("#avenantsList");
+  list.innerHTML = "";
+  $("#emptyAvenants").classList.toggle("hidden", avenants.length > 0);
+
+  const statusStyles = {
+    "A_valider": "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    "Envoyé_client": "bg-blue-500/15 text-blue-400 border-blue-500/30",
+    "Approuvé": "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+  };
+  const statusLabels = { "A_valider": "À valider", "Envoyé_client": "Envoyé client", "Approuvé": "Approuvé" };
+
+  avenants.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "bg-slate-900 border border-slate-800 rounded-xl p-3.5";
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-2 mb-1.5">
+        <p class="text-sm font-medium leading-snug flex-1">${a.description}</p>
+        <span class="text-[10px] shrink-0 px-2 py-0.5 rounded-full border ${statusStyles[a.status]}">${statusLabels[a.status]}</span>
+      </div>
+      <p class="text-lg font-bold text-emerald-400 mb-3">${euro(a.estimatedCostHT)} <span class="text-xs font-normal text-slate-500">HT</span></p>
+      <div class="flex gap-2">
+        <button class="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 py-2 rounded-lg" onclick="sendAvenant('${a.id}')">
+          <i data-lucide="send" class="w-3.5 h-3.5"></i> Envoyer pour signature
+        </button>
+      </div>`;
+    list.appendChild(div);
+  });
+  refreshIcons();
+}
+function sendAvenant(id) {
+  const a = state.avenants.find(x => x.id === id);
+  if (!a) return;
+  a.status = "Envoyé_client";
+  saveState();
+  const text = `Avenant chantier "${activeProject().name}" : ${a.description} — Estimation ${euro(a.estimatedCostHT)} HT. Merci de valider pour signature.`;
+  shareText(text, "Avenant à valider");
+  renderAll();
+}
+$("#exportFinanceBtn").addEventListener("click", () => {
+  const p = activeProject();
+  const avenants = state.avenants.filter(a => a.projectId === p.id);
+  const total = avenants.reduce((s, a) => s + (Number(a.estimatedCostHT) || 0), 0);
+  const lines = avenants.map(a => `• ${a.description} — ${euro(a.estimatedCostHT)} HT`).join("\n");
+  shareText(`Récapitulatif avenants — ${p.name}\n\n${lines}\n\nTotal HT : ${euro(total)}`, "Récapitulatif avenants");
+});
+
+function renderAll() {
+  renderDashboard(); renderReports(); renderReserves(); renderFinances();
+  refreshIcons();
+}
+
+/* ============================================================
+   PARTAGE (Web Share API) — 1-clic WhatsApp / SMS
+   ============================================================ */
+function shareText(text, title) {
+  if (navigator.share) {
+    navigator.share({ title: title || "ChantierCopilot", text }).catch(() => {});
+  } else {
+    window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+  }
+}
+function shareReport(id) {
+  const r = state.reports.find(x => x.id === id);
+  if (!r) return;
+  shareText(`${r.title}\n${r.date} · ${r.weather}\n\n${r.summary}`, r.title);
+}
+function downloadReportPdf(id) {
+  // Génération d'un PDF nécessite une lib côté client (ex: jsPDF) — branchement à prévoir.
+  alert("Export PDF : à connecter à une librairie type jsPDF, ou à un endpoint backend de génération.");
+}
+
+/* ============================================================
+   SELECTEUR DE PROJET
+   ============================================================ */
+function renderProjectModal() {
+  const wrap = $("#projectListModal");
+  wrap.innerHTML = "";
+  state.projects.forEach(p => {
+    const div = document.createElement("button");
+    div.className = "w-full flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl p-3 text-left";
+    div.innerHTML = `
+      <div class="w-9 h-9 rounded-lg bg-blue-600/15 flex items-center justify-center shrink-0">
+        <i data-lucide="building-2" class="w-4 h-4 text-blue-500"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold truncate">${p.name}</p>
+        <p class="text-xs text-slate-500 truncate">${p.address}</p>
+      </div>
+      ${p.id === state.activeProjectId ? '<i data-lucide="check" class="w-4 h-4 text-blue-500 shrink-0"></i>' : ""}`;
+    div.addEventListener("click", () => {
+      state.activeProjectId = p.id;
+      saveState();
+      $("#projectModal").classList.add("hidden");
+      renderAll();
+    });
+    wrap.appendChild(div);
+  });
+  refreshIcons();
+}
+$("#projectSelectorBtn").addEventListener("click", () => { renderProjectModal(); $("#projectModal").classList.remove("hidden"); });
+$("#projectModalOverlay").addEventListener("click", () => $("#projectModal").classList.add("hidden"));
+
+/* ============================================================
+   MOTEUR VOCAL & AGENT IA (TRIGGER-TO-ACTION)
+   ============================================================ */
+const fabMic = $("#fabMic");
+const voiceModal = $("#voiceModal");
+const recordBtn = $("#recordBtn");
+const processBtn = $("#processBtn");
+const waveformBox = $("#waveformBox");
+const idleMicIcon = $("#idleMicIcon");
+const liveTranscript = $("#liveTranscript");
+const recordingStatusLabel = $("#recordingStatusLabel");
+
+// Génère les barres du waveform
+for (let i = 0; i < 24; i++) {
+  const bar = document.createElement("div");
+  bar.className = "wave-bar";
+  bar.style.height = (16 + Math.random() * 32) + "px";
+  bar.style.animationDelay = (Math.random() * 0.6) + "s";
+  waveformBox.appendChild(bar);
+}
+
+function openVoiceModal() {
+  resetVoiceModalSteps();
+  voiceModal.classList.remove("hidden");
+  refreshIcons();
+}
+function closeVoiceModal() {
+  if (isRecording) stopRecording();
+  voiceModal.classList.add("hidden");
+}
+function resetVoiceModalSteps() {
+  $("#stepRecording").classList.remove("hidden");
+  $("#stepProcessing").classList.add("hidden");
+  $("#stepResult").classList.add("hidden");
+  processBtn.classList.add("hidden");
+  recordBtn.classList.remove("hidden");
+  waveformBox.classList.add("hidden");
+  idleMicIcon.classList.remove("hidden");
+  liveTranscript.textContent = "—";
+  recordingStatusLabel.textContent = "Appuyez pour dicter votre point chantier";
+  finalTranscript = "";
+}
+fabMic.addEventListener("click", openVoiceModal);
+$("#ctaCopilot").addEventListener("click", openVoiceModal);
+$("#closeVoiceModal").addEventListener("click", closeVoiceModal);
+$("#closeResultBtn").addEventListener("click", () => { closeVoiceModal(); renderAll(); });
+
+// Web Speech API (avec repli simulation si non supportée / hors-ligne)
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function startRecording() {
+  isRecording = true;
+  waveformBox.classList.remove("hidden");
+  idleMicIcon.classList.add("hidden");
+  recordingStatusLabel.textContent = "Écoute en cours... appuyez pour arrêter";
+  recordBtn.innerHTML = '<i data-lucide="square" class="w-7 h-7 text-white"></i>';
+  refreshIcons();
+
+  if (SpeechRecognitionAPI) {
+    recognition = new SpeechRecognitionAPI();
+    recognition.lang = "fr-FR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (e) => {
+      let interim = "";
+      finalTranscript = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
+        else interim += e.results[i][0].transcript;
+      }
+      liveTranscript.textContent = (finalTranscript + interim).trim() || "—";
+    };
+    recognition.onerror = () => simulateDictationFallback();
+    try { recognition.start(); } catch (e) { simulateDictationFallback(); }
+  } else {
+    simulateDictationFallback();
+  }
+}
+
+// Repli hors-ligne / navigateurs non compatibles : dictée simulée pour la démo
+function simulateDictationFallback() {
+  const demo = "Aujourd'hui sur le chantier, gros œuvre bien avancé, coffrage terminé au deuxième étage. Il y a une réserve importante appartement 302 salle de bain, infiltration au niveau du receveur, c'est le lot plomberie chez Dupont Sanitaire qui est responsable, priorité haute. Le client a demandé un ajout de prise électrique supplémentaire dans le salon du 105, avenant estimé à 450 euros. Le sous-traitant électricien a deux jours de retard, ça impacte le planning du peintre la semaine prochaine.";
+  let i = 0;
+  finalTranscript = "";
+  const interval = setInterval(() => {
+    if (!isRecording) { clearInterval(interval); return; }
+    finalTranscript = demo.slice(0, i);
+    liveTranscript.textContent = finalTranscript || "—";
+    i += 6;
+    if (i > demo.length) clearInterval(interval);
+  }, 40);
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (recognition) { try { recognition.stop(); } catch (e) {} }
+  waveformBox.classList.add("hidden");
+  idleMicIcon.classList.remove("hidden");
+  recordBtn.classList.add("hidden");
+  processBtn.classList.remove("hidden");
+  recordingStatusLabel.textContent = "Dictée terminée";
+  if (!finalTranscript.trim()) {
+    finalTranscript = liveTranscript.textContent === "—" ? "" : liveTranscript.textContent;
+  }
+  refreshIcons();
+}
+
+recordBtn.addEventListener("click", () => { if (!isRecording) startRecording(); else stopRecording(); });
+
+processBtn.addEventListener("click", () => {
+  $("#stepRecording").classList.add("hidden");
+  $("#stepProcessing").classList.remove("hidden");
+  // Simule le traitement de l'agent IA (Agentic Structuring Engine)
+  setTimeout(() => runAgenticStructuring(finalTranscript || ""), 1400);
+});
+
+/* ------------------------------------------------------------
+   Agentic Structuring Engine (mock)
+   NOTE : ceci est une heuristique de démonstration côté client.
+   En production, remplacer par un appel à l'API Claude (Messages API)
+   avec prompt structuré demandant un JSON { report, reserves[], avenants[], actions[] }.
+   ------------------------------------------------------------ */
+function runAgenticStructuring(transcript) {
+  const p = activeProject();
+  const today = new Date().toLocaleDateString("fr-FR");
+  const lower = transcript.toLowerCase();
+
+  const corpsEtat = [];
+  [["gros œuvre","gros"],["plomberie","plomb"],["électricité","électri"],["peinture","peintur"],["coffrage","coffrage"]].forEach(([label,key]) => {
+    if (lower.includes(key)) corpsEtat.push(label.charAt(0).toUpperCase()+label.slice(1));
+  });
+  if (corpsEtat.length === 0) corpsEtat.push("Gros Œuvre");
+
+  const report = {
+    id: uid("rep"), projectId: p.id, date: today,
+    title: "Compte-rendu du " + today,
+    summary: transcript ? (transcript.length > 220 ? transcript.slice(0,220) + "…" : transcript) : "Point chantier dicté oralement, structuré automatiquement par l'agent IA.",
+    weather: "Ensoleillé, 18°C",
+    status: "Brouillon",
+    corpsEtat
+  };
+
+  const reserves = [];
+  if (lower.includes("réserve") || lower.includes("infiltration") || lower.includes("problème") || lower.includes("anomalie")) {
+    reserves.push({
+      id: uid("res"), projectId: p.id, reportId: report.id,
+      lotName: lower.includes("plomberie") ? "Plomberie" : "Second Œuvre",
+      title: lower.includes("infiltration") ? "Infiltration au niveau du receveur" : "Anomalie détectée sur site",
+      location: extractLocation(transcript) || "Localisation à préciser",
+      priority: lower.includes("priorité haute") || lower.includes("important") ? "Haute" : "Moyenne",
+      assignedToSubcontractor: extractSubcontractor(transcript) || "À assigner",
+      status: "Ouverte", photoUrl: null
+    });
+  }
+
+  const avenants = [];
+  const costMatch = transcript.match(/(\d+)\s*(euros?|€)/i);
+  if (lower.includes("avenant") || lower.includes("supplément") || costMatch) {
+    avenants.push({
+      id: uid("ave"), projectId: p.id, reportId: report.id,
+      description: lower.includes("prise électrique") ? "Ajout d'une prise électrique supplémentaire" : "Travaux supplémentaires identifiés à la voix",
+      estimatedCostHT: costMatch ? Number(costMatch[1]) : 0,
+      status: "A_valider"
+    });
+  }
+
+  const actions = [];
+  if (lower.includes("retard")) {
+    actions.push({
+      id: uid("act"),
+      text: "Relance sous-traitant en retard — impact sur le planning des corps d'état suivants.",
+      smsDraft: `Bonjour, nous constatons un retard sur le chantier "${p.name}" qui impacte les intervenants suivants. Merci de nous indiquer une nouvelle date de passage.`
+    });
+  }
+
+  state.reports.unshift(report);
+  reserves.forEach(r => state.reserves.unshift(r));
+  avenants.forEach(a => state.avenants.unshift(a));
+  saveState();
+
+  showResultStep(report, reserves, avenants, actions);
+}
+
+function extractLocation(t) {
+  const m = t.match(/(appartement|apt\.?|logement)\s*(\d+)/i);
+  if (m) return "Apt " + m[2] + (t.toLowerCase().includes("salle de bain") ? " / Salle de bain" : "");
+  return null;
+}
+function extractSubcontractor(t) {
+  const m = t.match(/(?:chez|sous-traitant)\s+([A-ZÀ-Ü][\wÀ-ÿ\-]+(?:\s+[A-ZÀ-Ü][\wÀ-ÿ\-]+)?)/);
+  return m ? m[1] : null;
+}
+
+function showResultStep(report, reserves, avenants, actions) {
+  $("#stepProcessing").classList.add("hidden");
+  $("#stepResult").classList.remove("hidden");
+  const wrap = $("#resultCardsWrap");
+  wrap.innerHTML = "";
+
+  // Carte Rapport
+  wrap.appendChild(buildResultCard({
+    icon: "file-text", iconColor: "text-blue-400", badge: "Compte-rendu",
+    title: report.title,
+    body: report.summary,
+    actions: [
+      { label: "Télécharger PDF", icon: "file-down", handler: () => downloadReportPdf(report.id) },
+      { label: "Partager", icon: "share-2", handler: () => shareReport(report.id) }
+    ]
+  }));
+
+  // Cartes Réserves
+  reserves.forEach(r => {
+    wrap.appendChild(buildResultCard({
+      icon: "alert-triangle", iconColor: "text-amber-400", badge: "Réserve créée · " + r.priority,
+      title: r.title,
+      body: `${r.location} · ${r.lotName} · Sous-traitant : ${r.assignedToSubcontractor}`,
+      actions: [
+        { label: "Notifier le sous-traitant (WhatsApp)", icon: "message-circle", handler: () => notifySubcontractor(r.id) }
+      ]
+    }));
+  });
+
+  // Cartes Avenants
+  avenants.forEach(a => {
+    wrap.appendChild(buildResultCard({
+      icon: "euro", iconColor: "text-emerald-400", badge: "Avenant créé",
+      title: a.description,
+      body: `Estimation : ${euro(a.estimatedCostHT)} HT`,
+      actions: [
+        { label: "Envoyer pour signature client", icon: "send", handler: () => sendAvenant(a.id) }
+      ]
+    }));
+  });
+
+  // Cartes Actions/Relances
+  actions.forEach(act => {
+    wrap.appendChild(buildResultCard({
+      icon: "send", iconColor: "text-blue-400", badge: "Relance pré-rédigée",
+      title: act.text, body: act.smsDraft,
+      actions: [{ label: "Envoyer (SMS/WhatsApp)", icon: "message-circle", handler: () => shareText(act.smsDraft, "Relance") }]
+    }));
+  });
+
+  if (reserves.length === 0 && avenants.length === 0 && actions.length === 0) {
+    const note = document.createElement("p");
+    note.className = "text-xs text-slate-500 text-center pt-2";
+    note.textContent = "Aucune réserve, avenant ou relance détecté dans cette dictée.";
+    wrap.appendChild(note);
+  }
+
+  refreshIcons();
+}
+
+function buildResultCard({ icon, iconColor, badge, title, body, actions }) {
+  const div = document.createElement("div");
+  div.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4";
+  const actionsHtml = actions.map((a, idx) =>
+    `<button data-idx="${idx}" class="result-action-btn flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 py-2.5 rounded-lg">
+      <i data-lucide="${a.icon}" class="w-3.5 h-3.5"></i> ${a.label}
+    </button>`).join("");
+  div.innerHTML = `
+    <div class="flex items-center gap-2 mb-2">
+      <i data-lucide="${icon}" class="w-4 h-4 ${iconColor}"></i>
+      <span class="text-[10px] uppercase tracking-wide font-semibold ${iconColor}">${badge}</span>
+    </div>
+    <p class="font-semibold text-sm mb-1.5">${title}</p>
+    <p class="text-xs text-slate-400 mb-3">${body}</p>
+    <div class="flex gap-2 flex-wrap">${actionsHtml}</div>`;
+  div.querySelectorAll(".result-action-btn").forEach((btn, idx) => btn.addEventListener("click", () => actions[idx].handler()));
+  return div;
+}
+
+/* ============================================================
+   ETAT RESEAU (Online / Offline)
+   ============================================================ */
+function updateNetStatus() {
+  const online = navigator.onLine;
+  const el = $("#netStatus"), label = $("#netStatusLabel");
+  if (online) {
+    el.className = "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+    el.querySelector("span:first-child").className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
+    label.textContent = "En ligne";
+  } else {
+    el.className = "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20";
+    el.querySelector("span:first-child").className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+    label.textContent = "Hors-ligne";
+  }
+}
+window.addEventListener("online", updateNetStatus);
+window.addEventListener("offline", updateNetStatus);
+
+/* ============================================================
+   INIT
+   ============================================================ */
+updateNetStatus();
+renderAll();
+refreshIcons();
+</script>
 </body>
 </html>
