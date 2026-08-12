@@ -1,160 +1,358 @@
-<!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-950 text-slate-100">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ChantierIA Pro - Mobile First</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        /* Optimisations UX Mobile Tactile */
-        body {
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        /* Style des scrollbars pour l'interface web */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        /* Animation d'onde du micro */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.9); opacity: 0.8; }
-            50% { transform: scale(1.2); opacity: 0.3; }
-            100% { transform: scale(0.9); opacity: 0.8; }
-        }
-        .pulse-active { animation: pulse-ring 1.5s infinite ease-in-out; }
-    </style>
-</head>
-<body class="h-full flex flex-col justify-between select-none overflow-hidden">
+import React, { useState, useEffect } from 'react';
+import { 
+  Mic, Camera, HardHat, AlertTriangle, FileText, Euro, CheckCircle2, 
+  ChevronRight, Share2, Download, Sparkles, X, Send, Bell, Wifi, Plus, Search, Filter
+} from 'lucide-react';
 
-    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-3.5 sticky top-0 z-20 flex items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-                <i data-lucide="hard-hat" class="w-5 h-5 text-white"></i>
-            </div>
-            <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                    <span id="network-status" class="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="En ligne"></span>
-                    <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Projet actif</span>
-                </div>
-                <select id="select-chantier" class="bg-transparent font-bold text-sm text-white focus:outline-none cursor-pointer truncate w-full pr-2">
-                    <option value="1" class="bg-slate-900">Résidence Les Pines - Apt 302</option>
-                    <option value="2" class="bg-slate-900">Rénovation Villa Marly</option>
-                    <option value="3" class="bg-slate-900">Bureaux Espace Nord</option>
-                </select>
-            </div>
-        </div>
-        <div class="flex items-center gap-2">
-            <button class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 relative">
-                <i data-lucide="bell" class="w-4 h-4"></i>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-500"></span>
-            </button>
-        </div>
-    </header>
+export default function ProfessionalChantierApp() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [reports, setReports] = useState([
+    {
+      id: 'CR-014',
+      date: '12 Août 2026',
+      title: 'Validation de la Chape - Bâtiment A',
+      summary: 'Pose des cloisons sur le lot 2 effectuée conformément aux DTU. Léger retard identifié sur le raccordement électrique principal.',
+      photosCount: 3,
+      reservesCount: 1,
+      status: 'Validé'
+    },
+    {
+      id: 'CR-013',
+      date: '08 Août 2026',
+      title: 'Inspection Lot Plomberie & Sanitaires',
+      summary: 'Passage des gaines terminé dans l\'ensemble des appartements du 2ème étage.',
+      photosCount: 6,
+      reservesCount: 0,
+      status: 'Envoyé'
+    }
+  ]);
 
-    <main id="main-container" class="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
+  const [reserves, setReserves] = useState([
+    {
+      id: 'RES-01',
+      title: 'Fuite sous le collecteur principal',
+      lot: 'Plomberie',
+      assignedTo: 'SARL Plomb\'Art',
+      priority: 'Haute',
+      status: 'Ouverte'
+    },
+    {
+      id: 'RES-02',
+      title: 'Défaut d\'alignement prise haute',
+      lot: 'Électricité',
+      assignedTo: 'ElecConnect',
+      priority: 'Moyenne',
+      status: 'Ouverte'
+    }
+  ]);
 
-        <div id="tab-dashboard" class="space-y-4">
-            
-            <div class="bg-gradient-to-br from-slate-900 to-slate-900/80 border border-slate-800/80 rounded-2xl p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Avancement Global</h2>
-                        <p class="text-xl font-bold text-white">68 % <span class="text-xs font-normal text-emerald-400">+5% cette semaine</span></p>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold border border-blue-500/20">
-                        Phase Gros Œuvre
-                    </span>
-                </div>
-                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full" style="width: 68%;"></div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 pt-1 text-center border-t border-slate-800/60 text-xs">
-                    <div><span class="text-slate-400 block">Lots</span><b class="text-slate-200">8/12</b></div>
-                    <div><span class="text-slate-400 block">Réserves</span><b class="text-amber-400">3 ouvertes</b></div>
-                    <div><span class="text-slate-400 block">Avenants</span><b class="text-emerald-400">+1 250 €</b></div>
-                </div>
-            </div>
+  // Gestion de la dictée vocale simulée (ou WebSpeech API)
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setTranscript("Enregistrement en cours... Parlez naturellement.");
+    // Simulation d'une saisie vocale en temps réel
+    setTimeout(() => {
+      setTranscript("Constat sur le lot 2 : Les plaques de plâtre sont posées. Attention, fuite d'eau constatée sous l'évier de la cuisine du logement 302, prévoir révision du plombier et un coffrage additionnel estimé à 400 euros.");
+    }, 2000);
+  };
 
-            <div onclick="openRecordingModal()" class="bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition">
-                <div class="space-y-1">
-                    <span class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Dictée Vocale IA
-                    </span>
-                    <h3 class="text-sm font-semibold text-white">Créer un rapport ou une réserve</h3>
-                    <p class="text-xs text-slate-400">Parlez 1 min, l'IA s'occupe de tout classer.</p>
-                </div>
-                <div class="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
-                    <i data-lucide="mic" class="w-5 h-5"></i>
-                </div>
-            </div>
+  const handleStopRecording = () => {
+    setIsRecording(false);
+  };
 
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Activités Récentes</h3>
-                    <button onclick="switchTab('tab-reports')" class="text-xs font-semibold text-blue-400 hover:underline">Voir tout</button>
-                </div>
+  const handleGenerateAIReport = () => {
+    if (!transcript) return;
+    
+    const newReport = {
+      id: `CR-0${reports.length + 13}`,
+      date: 'Aujourd\'hui',
+      title: 'Compte-Rendu Automatique IA',
+      summary: transcript,
+      photosCount: 1,
+      reservesCount: 1,
+      status: 'Généré'
+    };
 
-                <div class="space-y-2">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-semibold text-slate-200">Réserve Plomberie</h4>
-                                <p class="text-xs text-slate-400">Aujourd'hui 11h20 • Lot Sanitaires</p>
-                            </div>
-                        </div>
-                        <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold px-2 py-0.5 rounded-md">Urgent</span>
-                    </div>
+    setReports([newReport, ...reports]);
+    setIsRecordingModalOpen(false);
+    setTranscript('');
+    setActiveTab('reports');
+  };
 
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                <i data-lucide="file-check" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-semibold text-slate-200">CR #14 - Validation Chape</h4>
-                                <p class="text-xs text-slate-400">Hier • Envoyé au maître d'ouvrage</p>
-                            </div>
-                        </div>
-                        <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="flex h-screen w-full bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
+      
+      {/* SIDEBAR DESKTOP (Cache sur mobile, visible sur grand écran pour la démonstration client) */}
+      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-6">
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <HardHat className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-base text-white tracking-tight">ChantierIA Pro</h1>
+            <span className="text-xs text-slate-400">Suite Modulaire BTP</span>
+          </div>
         </div>
 
-        <div id="tab-reports" class="hidden space-y-4">
-            <div class="flex items-center justify-between">
-                <h2 class="text-base font-bold text-white">Rapports & PV de Chantier</h2>
-                <button onclick="openRecordingModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-md">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Nouveau
+        <nav className="space-y-1 text-sm font-medium">
+          <NavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<HardHat className="w-4 h-4"/>} label="Tableau de bord" />
+          <NavItem active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} icon={<FileText className="w-4 h-4"/>} label="Comptes-Rendus IA" count={reports.length} />
+          <NavItem active={activeTab === 'reserves'} onClick={() => setActiveTab('reserves')} icon={<AlertTriangle className="w-4 h-4"/>} label="Réserves & Anomaly" count={reserves.length} />
+          <NavItem active={activeTab === 'finances'} onClick={() => setActiveTab('finances')} icon={<Euro className="w-4 h-4"/>} label="Avenants & Devis" />
+        </nav>
+
+        <div className="mt-auto p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2">
+          <div className="flex items-center gap-2">
+            <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs font-semibold text-slate-300">Mode Sync Actif</span>
+          </div>
+          <p className="text-[11px] text-slate-500">Dernière synchronisation il y a 2 min.</p>
+        </div>
+      </aside>
+
+      {/* ZONE PRINCIPALE MOBILE & DESKTOP */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative max-w-md md:max-w-none mx-auto w-full bg-slate-950 border-x border-slate-800/50">
+
+        {/* HEADER TOP BAR */}
+        <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 p-4 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <div className="md:hidden w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+              <HardHat className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-blue-400 tracking-wider uppercase block">Résidence Les Pines</span>
+              <h2 className="text-sm font-bold text-white flex items-center gap-1 cursor-pointer">
+                Chantier N°302 <ChevronRight className="w-4 h-4 text-slate-500" />
+              </h2>
+            </div>
+          </div>
+          <button className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700/50 flex items-center justify-center text-slate-300 relative">
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+          </button>
+        </header>
+
+        {/* CONTENU PRINCIPALE VARIABLE */}
+        <main className="flex-1 overflow-y-auto p-4 space-y-5 pb-28">
+
+          {/* DASHBOARD TAB */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              
+              {/* Carte Status Global */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl"></div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400 uppercase">Progression du projet</span>
+                    <p className="text-2xl font-extrabold text-white mt-0.5">72%</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                    Dans les temps
+                  </span>
+                </div>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-500 to-emerald-400 h-full w-[72%] rounded-full"></div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80 text-center">
+                  <div><span className="text-[10px] text-slate-500 block">Lots Valides</span><strong className="text-xs text-slate-200">9/12</strong></div>
+                  <div><span className="text-[10px] text-slate-500 block">Réserves</span><strong className="text-xs text-amber-400">2 Actives</strong></div>
+                  <div><span className="text-[10px] text-slate-500 block">Budget Avenants</span><strong className="text-xs text-emerald-400">+ 850 €</strong></div>
+                </div>
+              </div>
+
+              {/* ACTION TRIGGER : Dictée Vocale Pro */}
+              <div 
+                onClick={() => setIsRecordingModalOpen(true)}
+                className="group bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-slate-900 border border-blue-500/30 hover:border-blue-500/60 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 animate-spin-slow" /> Assistant Copilote IA
+                  </div>
+                  <h3 className="text-sm font-semibold text-white">Dictée vocale ultra-rapide</h3>
+                  <p className="text-xs text-slate-400">Dictez vos constatations, l'IA s'occupe de tout.</p>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 group-hover:bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transition shrink-0">
+                  <Mic className="w-6 h-6" />
+                </div>
+              </div>
+
+              {/* ACTIVITÉ RÉCENTE */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Flux d'activités</h3>
+                  <button onClick={() => setActiveTab('reports')} className="text-xs font-semibold text-blue-400 hover:underline">Tout voir</button>
+                </div>
+                {reports.map((report) => (
+                  <div key={report.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-200">{report.title}</span>
+                      <span className="text-[10px] font-semibold text-slate-500">{report.date}</span>
+                    </div>
+                    <p className="text-xs text-slate-400 line-clamp-2">{report.summary}</p>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* REPORTS TAB */}
+          {activeTab === 'reports' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex justify-between items-center">
+                <h2 className="text-base font-bold text-white">Comptes-Rendus Automatisés</h2>
+                <button onClick={() => setIsRecordingModalOpen(true)} className="bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5">
+                  <Plus className="w-4 h-4" /> Nouveau
                 </button>
-            </div>
+              </div>
 
-            <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
-                <button class="bg-blue-600 text-white px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap">Tous (14)</button>
-                <button class="bg-slate-900 text-slate-400 border border-slate-800 px-3 py-1.5 rounded-xl font-medium whitespace-nowrap">Validés</button>
-                <button class="bg-slate-900 text-slate-400 border border-slate-800 px-3 py-1.5 rounded-xl font-medium whitespace-nowrap">En attente</button>
-            </div>
-
-            <div id="reports-list" class="space-y-3">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
-                            <span class="text-xs font-bold text-slate-200">CR #14 - Suivi d'Avancement</span>
-                        </div>
-                        <span class="text-[10px] font-semibold text-slate-400">12 Août 2026</span>
+              <div className="space-y-3">
+                {reports.map((report) => (
+                  <div key={report.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs font-bold text-slate-200">{report.id}</span>
+                      </div>
+                      <span className="text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">{report.status}</span>
                     </div>
-                    <p class="text-xs text-slate-300">
-                        Pose des cloisons sur le lot 2 effectuée. Retard noté sur l'alimentation électrique générale.
-                    </p>
-                    <div class="flex items-center justify-between pt-1">
-                        <div class="flex gap-1.5">
-                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">3 Photos</span>
-                            <span class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded">1 Réserve</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="shareReport('CR #14')" class="
+                    <h3 className="text-sm font-semibold text-slate-100">{report.title}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">{report.summary}</p>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                      <span className="text-[11px] text-slate-500">{report.photosCount} photos attachées</span>
+                      <div className="flex gap-2">
+                        <button className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"><Share2 className="w-3.5 h-3.5"/></button>
+                        <button className="p-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white"><Download className="w-3.5 h-3.5"/></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* RESERVES TAB */}
+          {activeTab === 'reserves' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex justify-between items-center">
+                <h2 className="text-base font-bold text-white">Réserves & Anomalies</h2>
+                <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">{reserves.length} Actives</span>
+              </div>
+
+              <div className="space-y-3">
+                {reserves.map((res) => (
+                  <div key={res.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{res.lot}</span>
+                        <h3 className="text-sm font-semibold text-slate-100">{res.title}</h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">{res.priority}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                      <span>Attribué à : <b className="text-slate-200">{res.assignedTo}</b></span>
+                      <button className="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white text-xs px-2.5 py-1 rounded-lg font-semibold transition">
+                        Marquer levée
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </main>
+
+        {/* MODAL IA : VOCAL AND AI PROCESSING */}
+        {isRecordingModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col justify-between p-6 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" /> Agent Copilote Vocal
+              </span>
+              <button onClick={() => setIsRecordingModalOpen(false)} className="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-center space-y-6 max-w-sm mx-auto w-full">
+              <div className="relative inline-block">
+                {isRecording && <div className="absolute -inset-4 rounded-full bg-blue-600/30 animate-ping"></div>}
+                <button 
+                  onClick={isRecording ? handleStopRecording : handleStartRecording} 
+                  className={`w-24 h-24 rounded-full ${isRecording ? 'bg-red-600' : 'bg-blue-600'} text-white flex items-center justify-center shadow-2xl shadow-blue-500/40 relative z-10 transition-transform active:scale-95`}
+                >
+                  <Mic className="w-10 h-10" />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-white">{isRecording ? "Écoute en cours..." : "Appuyez sur le micro pour parler"}</h3>
+                <div className="min-h-[90px] bg-slate-900 border border-slate-800 p-3 rounded-2xl text-sm text-slate-300 italic text-left overflow-y-auto">
+                  {transcript || "Exemple : 'Je suis dans la pièce 201, la peinture est terminée mais il manque le joint d'étanchéité sur la fenêtre...'"}
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleGenerateAIReport}
+              disabled={!transcript || isRecording}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 disabled:opacity-50"
+            >
+              <Sparkles className="w-4 h-4" /> Générer le Rapport Structuré par IA
+            </button>
+          </div>
+        )}
+
+        {/* BOTTOM NAVIGATION (MOBILE-FIRST THUMB NAV) */}
+        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-3 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none z-30">
+          <div className="flex items-center justify-around pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-800 p-1.5 rounded-3xl shadow-2xl">
+            <BottomNavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<HardHat className="w-5 h-5"/>} label="Accueil" />
+            <BottomNavItem active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} icon={<FileText className="w-5 h-5"/>} label="CR IA" />
+            
+            {/* MICRO BUTTON CENTRAL */}
+            <button 
+              onClick={() => setIsRecordingModalOpen(true)}
+              className="relative -top-4 w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 active:scale-90 transition"
+            >
+              <Mic className="w-6 h-6" />
+            </button>
+
+            <BottomNavItem active={activeTab === 'reserves'} onClick={() => setActiveTab('reserves')} icon={<AlertTriangle className="w-5 h-5"/>} label="Réserves" />
+            <BottomNavItem active={activeTab === 'finances'} onClick={() => setActiveTab('finances')} icon={<Euro className="w-5 h-5"/>} label="Avenants" />
+          </div>
+        </nav>
+
+      </div>
+    </div>
+  );
+}
+
+// Composants auxilaires réutilisables
+function NavItem({ active, onClick, icon, label, count }) {
+  return (
+    <button 
+      onClick={onClick} 
+      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ${active ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+    >
+      <div className="flex items-center gap-2.5">
+        {icon}
+        <span>{label}</span>
+      </div>
+      {count !== undefined && (
+        <span className={`text-xs px-2 py-0.5 rounded-full ${active ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>{count}</span>
+      )}
+    </button>
+  );
+}
+
+function BottomNavItem({ active, onClick, icon, label }) {
+  return (
+    <button 
+      onClick={onClick} 
+      className={`p-2 rounded-2xl flex flex-col items-center gap-1 transition ${active ? 'text-blue-400 font-semibold' : 'text-slate-500 hover:text
