@@ -1,1 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChantierIA - Suivi Mobile First</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Anti-rebond & Optimisations tactiles mobile */
+        body {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Animation d'onde pour le micro */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-active {
+            animation: pulse-ring 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between font-sans antialiased select-none">
 
+    <header class="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/20">
+                <i data-lucide="hard-hat" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Chantier en cours</span>
+                <select id="select-chantier" class="bg-transparent font-bold text-base text-white focus:outline-none cursor-pointer pr-2">
+                    <option value="1" class="bg-slate-900">Résidence Les Pins - Apt 302</option>
+                    <option value="2" class="bg-slate-900">Rénovation Villa Marly</option>
+                    <option value="3" class="bg-slate-900">Bureaux Espace Nord</option>
+                </select>
+            </div>
+        </div>
+        <button class="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
+
+        <section id="recording-status" class="hidden bg-slate-900 border border-blue-500/30 rounded-2xl p-4 text-center space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold animate-pulse">
+                <span class="w-2 h-2 rounded-full bg-red-500"></span> Enregistrement vocal...
+            </div>
+            <p id="transcript-preview" class="text-sm italic text-slate-300 min-h-[40px] flex items-center justify-center">
+                "Dictée en cours, parlez naturellement..."
+            </p>
+        </section>
+
+        <section id="ai-result" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <span class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Analyse IA Générée
+                </span>
+                <span class="text-xs text-slate-500">À l'instant</span>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-sm font-semibold text-slate-200">Résumé du point de chantier</h3>
+                <p id="ai-summary" class="text-sm text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                    --
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Détecté automatiquement</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                        <span class="text-xs font-bold text-amber-400 block">Réserve / Problème</span>
+                        <span id="ai-tag-reserve" class="text-xs text-slate-300">--</span>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                        <span class="text-xs font-bold text-emerald-400 block">Avenant potentiel</span>
+                        <span id="ai-tag-avenant" class="text-xs text-slate-300">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2 flex gap-2">
+                <button onclick="validerCompteRendu()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+                    <i data-lucide="check" class="w-4 h-4"></i> Valider & Générer CR
+                </button>
+                <button onclick="partagerWhatsApp()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Historique récent</h2>
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-slate-800 text-blue-400">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-200">CR #12 - Avancement Plomberie</h4>
+                        <p class="text-xs text-slate-500">Hier à 16:45 • 3 anomalies</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-600"></i>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-slate-800 text-blue-400">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-200">CR #11 - Réception Lot Électricité</h4>
+                        <p class="text-xs text-slate-500">10 Août • Validé</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-600"></i>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none">
+        <div class="max-w-md mx-auto flex items-center justify-around pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-800 p-2 rounded-3xl shadow-2xl">
+            
+            <button class="p-3 text-slate-400 hover:text-white rounded-2xl flex flex-col items-center gap-1 active:scale-95 transition">
+                <i data-lucide="camera" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Photo</span>
+            </button>
+
+            <button id="btn-mic" onclick="toggleRecording()" class="relative -top-5 w-16 h-16 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-xl shadow-blue-600/40 active:scale-90 transition">
+                <div id="pulse-bg" class="absolute inset-0 rounded-full bg-blue-500 hidden"></div>
+                <i id="mic-icon" data-lucide="mic" class="w-7 h-7 relative z-10"></i>
+            </button>
+
+            <button class="p-3 text-slate-400 hover:text-white rounded-2xl flex flex-col items-center gap-1 active:scale-95 transition">
+                <i data-lucide="pen-tool" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Saisie</span>
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+        // Initialiser les icônes Lucide
+        lucide.createIcons();
+
+        let isRecording = false;
+        let recognition;
+
+        // Vérification du support de la reconnaissance vocale
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'fr-FR';
+
+            recognition.onresult = (event) => {
+                let currentTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    currentTranscript += event.results[i][0].transcript;
+                }
+                document.getElementById('transcript-preview').innerText = `"${currentTranscript}"`;
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Erreur de reconnaissance :", event.error);
+            };
+        }
+
+        function toggleRecording() {
+            const micBtn = document.getElementById('btn-mic');
+            const micIcon = document.getElementById('mic-icon');
+            const pulseBg = document.getElementById('pulse-bg');
+            const recordingStatus = document.getElementById('recording-status');
+            const aiResult = document.getElementById('ai-result');
+
+            if (!isRecording) {
+                // Démarrer l'enregistrement
+                isRecording = true;
+                micBtn.classList.remove('bg-blue-600');
+                micBtn.classList.add('bg-red-600');
+                pulseBg.classList.remove('hidden');
+                pulseBg.classList.add('pulse-active');
+                recordingStatus.classList.remove('hidden');
+                aiResult.classList.add('hidden');
+
+                if (recognition) recognition.start();
+
+            } else {
+                // Arrêter l'enregistrement & Lancer la simulation IA
+                isRecording = false;
+                micBtn.classList.remove('bg-red-600');
+                micBtn.classList.add('bg-blue-600');
+                pulseBg.classList.add('hidden');
+                pulseBg.classList.remove('pulse-active');
+                recordingStatus.classList.add('hidden');
+
+                if (recognition) recognition.stop();
+
+                // Simulation du traitement par Agent IA
+                simulerTraitementIA();
+            }
+        }
+
+        function simulerTraitementIA() {
+            const aiResult = document.getElementById('ai-result');
+            aiResult.classList.remove('hidden');
+
+            // Valeurs d'exemple générées par l'IA à partir de la dictée
+            document.getElementById('ai-summary').innerText = "Retard constaté sur le lot plomberie suite à l'absence du sous-traitant. Impact sur le coulage de la chape prévu jeudi.";
+            document.getElementById('ai-tag-reserve').innerText = "Arrivées d'eau non scellées (Apt 302)";
+            document.getElementById('ai-tag-avenant').innerText = "Coffrage additionnel (+350€ HT)";
+        }
+
+        function validerCompteRendu() {
+            alert("Compte-rendu validé ! Le PDF a été généré et archivé pour ce chantier.");
+        }
+
+        function partagerWhatsApp() {
+            const texte = encodeURIComponent("Bonjour, voici le point de chantier rapide : Retard plomberie identifié. Avenant coffrage à valider.");
+            window.open(`https://wa.me/?text=${texte}`, '_blank');
+        }
+    </script>
+</body>
+</html>
