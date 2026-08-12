@@ -1,358 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Mic, Camera, HardHat, AlertTriangle, FileText, Euro, CheckCircle2, 
-  ChevronRight, Share2, Download, Sparkles, X, Send, Bell, Wifi, Plus, Search, Filter
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChantierIA Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="h-full">
+    <div id="root" class="h-full"></div>
 
-export default function ProfessionalChantierApp() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [reports, setReports] = useState([
-    {
-      id: 'CR-014',
-      date: '12 Août 2026',
-      title: 'Validation de la Chape - Bâtiment A',
-      summary: 'Pose des cloisons sur le lot 2 effectuée conformément aux DTU. Léger retard identifié sur le raccordement électrique principal.',
-      photosCount: 3,
-      reservesCount: 1,
-      status: 'Validé'
-    },
-    {
-      id: 'CR-013',
-      date: '08 Août 2026',
-      title: 'Inspection Lot Plomberie & Sanitaires',
-      summary: 'Passage des gaines terminé dans l\'ensemble des appartements du 2ème étage.',
-      photosCount: 6,
-      reservesCount: 0,
-      status: 'Envoyé'
-    }
-  ]);
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  const [reserves, setReserves] = useState([
-    {
-      id: 'RES-01',
-      title: 'Fuite sous le collecteur principal',
-      lot: 'Plomberie',
-      assignedTo: 'SARL Plomb\'Art',
-      priority: 'Haute',
-      status: 'Ouverte'
-    },
-    {
-      id: 'RES-02',
-      title: 'Défaut d\'alignement prise haute',
-      lot: 'Électricité',
-      assignedTo: 'ElecConnect',
-      priority: 'Moyenne',
-      status: 'Ouverte'
-    }
-  ]);
+        function App() {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
+            const [isRecording, setIsRecording] = useState(false);
+            const [transcript, setTranscript] = useState('');
 
-  // Gestion de la dictée vocale simulée (ou WebSpeech API)
-  const handleStartRecording = () => {
-    setIsRecording(true);
-    setTranscript("Enregistrement en cours... Parlez naturellement.");
-    // Simulation d'une saisie vocale en temps réel
-    setTimeout(() => {
-      setTranscript("Constat sur le lot 2 : Les plaques de plâtre sont posées. Attention, fuite d'eau constatée sous l'évier de la cuisine du logement 302, prévoir révision du plombier et un coffrage additionnel estimé à 400 euros.");
-    }, 2000);
-  };
+            useEffect(() => {
+                lucide.createIcons();
+            }, [activeTab, isRecordingModalOpen]);
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
-  };
+            const handleStartRecording = () => {
+                setIsRecording(true);
+                setTranscript("Enregistrement en cours...");
+                setTimeout(() => {
+                    setTranscript("Constat lot 2 : Plaques posées. Fuite d'eau constatée logement 302, prévoir coffrage additionnel de 400€.");
+                }, 1500);
+            };
 
-  const handleGenerateAIReport = () => {
-    if (!transcript) return;
-    
-    const newReport = {
-      id: `CR-0${reports.length + 13}`,
-      date: 'Aujourd\'hui',
-      title: 'Compte-Rendu Automatique IA',
-      summary: transcript,
-      photosCount: 1,
-      reservesCount: 1,
-      status: 'Généré'
-    };
+            const handleStopRecording = () => {
+                setIsRecording(false);
+            };
 
-    setReports([newReport, ...reports]);
-    setIsRecordingModalOpen(false);
-    setTranscript('');
-    setActiveTab('reports');
-  };
+            return (
+                <div className="flex h-full w-full bg-slate-950 text-slate-100 font-sans overflow-hidden">
+                    <div className="flex-1 flex flex-col h-full overflow-hidden relative max-w-md mx-auto w-full border-x border-slate-800">
+                        
+                        {/* Header */}
+                        <header className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">Résidence Les Pins</span>
+                                <h2 className="text-sm font-bold text-white">Chantier N°302</h2>
+                            </div>
+                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-xs">IA</div>
+                        </header>
 
-  return (
-    <div className="flex h-screen w-full bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
-      
-      {/* SIDEBAR DESKTOP (Cache sur mobile, visible sur grand écran pour la démonstration client) */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-6">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <HardHat className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-base text-white tracking-tight">ChantierIA Pro</h1>
-            <span className="text-xs text-slate-400">Suite Modulaire BTP</span>
-          </div>
-        </div>
+                        {/* Main Content */}
+                        <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
+                            {activeTab === 'dashboard' && (
+                                <div className="space-y-4">
+                                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
+                                        <span className="text-xs text-slate-400">Progression globale</span>
+                                        <div className="text-2xl font-bold">72 %</div>
+                                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                            <div className="bg-blue-500 h-full w-[72%]"></div>
+                                        </div>
+                                    </div>
 
-        <nav className="space-y-1 text-sm font-medium">
-          <NavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<HardHat className="w-4 h-4"/>} label="Tableau de bord" />
-          <NavItem active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} icon={<FileText className="w-4 h-4"/>} label="Comptes-Rendus IA" count={reports.length} />
-          <NavItem active={activeTab === 'reserves'} onClick={() => setActiveTab('reserves')} icon={<AlertTriangle className="w-4 h-4"/>} label="Réserves & Anomaly" count={reserves.length} />
-          <NavItem active={activeTab === 'finances'} onClick={() => setActiveTab('finances')} icon={<Euro className="w-4 h-4"/>} label="Avenants & Devis" />
-        </nav>
+                                    <div onClick={() => setIsRecordingModalOpen(true)} className="bg-gradient-to-r from-blue-900/40 to-slate-900 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between cursor-pointer">
+                                        <div>
+                                            <span className="text-xs font-bold text-blue-400 uppercase">Assistant Vocal</span>
+                                            <h3 className="text-sm font-semibold text-white">Dictée vocale chantier</h3>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">🎙️</div>
+                                    </div>
+                                </div>
+                            )}
 
-        <div className="mt-auto p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2">
-          <div className="flex items-center gap-2">
-            <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-xs font-semibold text-slate-300">Mode Sync Actif</span>
-          </div>
-          <p className="text-[11px] text-slate-500">Dernière synchronisation il y a 2 min.</p>
-        </div>
-      </aside>
+                            {activeTab === 'reports' && (
+                                <div className="space-y-3">
+                                    <h2 className="text-sm font-bold">Comptes-Rendus Générés</h2>
+                                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
+                                        <span className="text-xs text-blue-400 font-bold">CR #14 - Validation Chape</span>
+                                        <p className="text-xs text-slate-300">Pose des cloisons effectuée. Léger retard sur le raccordement électrique.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
 
-      {/* ZONE PRINCIPALE MOBILE & DESKTOP */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative max-w-md md:max-w-none mx-auto w-full bg-slate-950 border-x border-slate-800/50">
+                        {/* Modal Vocal */}
+                        {isRecordingModalOpen && (
+                            <div className="fixed inset-0 z-50 bg-slate-950/95 p-6 flex flex-col justify-between">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-blue-400">Copilote Vocal IA</span>
+                                    <button onClick={() => setIsRecordingModalOpen(false)} className="text-slate-400 font-bold">✕</button>
+                                </div>
+                                <div className="text-center space-y-4">
+                                    <button 
+                                        onClick={isRecording ? handleStopRecording : handleStartRecording}
+                                        className={`w-20 h-20 rounded-full ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-blue-600'} text-white font-bold mx-auto flex items-center justify-center text-xl`}
+                                    >
+                                        🎙️
+                                    </button>
+                                    <p className="text-xs text-slate-300 italic">{transcript || "Appuyez sur le micro et parlez..."}</p>
+                                </div>
+                                <button onClick={() => { setIsRecordingModalOpen(false); setActiveTab('reports'); }} className="w-full bg-blue-600 text-white py-3 rounded-xl text-xs font-bold">
+                                    Générer le rapport par IA
+                                </button>
+                            </div>
+                        )}
 
-        {/* HEADER TOP BAR */}
-        <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 p-4 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <div className="md:hidden w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
-              <HardHat className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <span className="text-[10px] font-bold text-blue-400 tracking-wider uppercase block">Résidence Les Pines</span>
-              <h2 className="text-sm font-bold text-white flex items-center gap-1 cursor-pointer">
-                Chantier N°302 <ChevronRight className="w-4 h-4 text-slate-500" />
-              </h2>
-            </div>
-          </div>
-          <button className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700/50 flex items-center justify-center text-slate-300 relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-          </button>
-        </header>
+                        {/* Bottom Nav */}
+                        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-3 bg-slate-950/90 border-t border-slate-800 flex justify-around text-xs">
+                            <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'text-blue-400 font-bold' : 'text-slate-400'}>Accueil</button>
+                            <button onClick={() => setIsRecordingModalOpen(true)} className="text-blue-500 font-bold">🎙️ Micro</button>
+                            <button onClick={() => setActiveTab('reports')} className={activeTab === 'reports' ? 'text-blue-400 font-bold' : 'text-slate-400'}>Rapports</button>
+                        </nav>
 
-        {/* CONTENU PRINCIPALE VARIABLE */}
-        <main className="flex-1 overflow-y-auto p-4 space-y-5 pb-28">
-
-          {/* DASHBOARD TAB */}
-          {activeTab === 'dashboard' && (
-            <div className="space-y-4 animate-in fade-in duration-300">
-              
-              {/* Carte Status Global */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl"></div>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-xs font-semibold text-slate-400 uppercase">Progression du projet</span>
-                    <p className="text-2xl font-extrabold text-white mt-0.5">72%</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-                    Dans les temps
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-500 to-emerald-400 h-full w-[72%] rounded-full"></div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80 text-center">
-                  <div><span className="text-[10px] text-slate-500 block">Lots Valides</span><strong className="text-xs text-slate-200">9/12</strong></div>
-                  <div><span className="text-[10px] text-slate-500 block">Réserves</span><strong className="text-xs text-amber-400">2 Actives</strong></div>
-                  <div><span className="text-[10px] text-slate-500 block">Budget Avenants</span><strong className="text-xs text-emerald-400">+ 850 €</strong></div>
-                </div>
-              </div>
-
-              {/* ACTION TRIGGER : Dictée Vocale Pro */}
-              <div 
-                onClick={() => setIsRecordingModalOpen(true)}
-                className="group bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-slate-900 border border-blue-500/30 hover:border-blue-500/60 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-lg"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-blue-400 text-xs font-bold uppercase tracking-wider">
-                    <Sparkles className="w-4 h-4 animate-spin-slow" /> Assistant Copilote IA
-                  </div>
-                  <h3 className="text-sm font-semibold text-white">Dictée vocale ultra-rapide</h3>
-                  <p className="text-xs text-slate-400">Dictez vos constatations, l'IA s'occupe de tout.</p>
-                </div>
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 group-hover:bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transition shrink-0">
-                  <Mic className="w-6 h-6" />
-                </div>
-              </div>
-
-              {/* ACTIVITÉ RÉCENTE */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Flux d'activités</h3>
-                  <button onClick={() => setActiveTab('reports')} className="text-xs font-semibold text-blue-400 hover:underline">Tout voir</button>
-                </div>
-                {reports.map((report) => (
-                  <div key={report.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-200">{report.title}</span>
-                      <span className="text-[10px] font-semibold text-slate-500">{report.date}</span>
                     </div>
-                    <p className="text-xs text-slate-400 line-clamp-2">{report.summary}</p>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          )}
-
-          {/* REPORTS TAB */}
-          {activeTab === 'reports' && (
-            <div className="space-y-4 animate-in fade-in duration-300">
-              <div className="flex justify-between items-center">
-                <h2 className="text-base font-bold text-white">Comptes-Rendus Automatisés</h2>
-                <button onClick={() => setIsRecordingModalOpen(true)} className="bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5">
-                  <Plus className="w-4 h-4" /> Nouveau
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {reports.map((report) => (
-                  <div key={report.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs font-bold text-slate-200">{report.id}</span>
-                      </div>
-                      <span className="text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">{report.status}</span>
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-100">{report.title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">{report.summary}</p>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
-                      <span className="text-[11px] text-slate-500">{report.photosCount} photos attachées</span>
-                      <div className="flex gap-2">
-                        <button className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"><Share2 className="w-3.5 h-3.5"/></button>
-                        <button className="p-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white"><Download className="w-3.5 h-3.5"/></button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* RESERVES TAB */}
-          {activeTab === 'reserves' && (
-            <div className="space-y-4 animate-in fade-in duration-300">
-              <div className="flex justify-between items-center">
-                <h2 className="text-base font-bold text-white">Réserves & Anomalies</h2>
-                <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">{reserves.length} Actives</span>
-              </div>
-
-              <div className="space-y-3">
-                {reserves.map((res) => (
-                  <div key={res.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{res.lot}</span>
-                        <h3 className="text-sm font-semibold text-slate-100">{res.title}</h3>
-                      </div>
-                      <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">{res.priority}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
-                      <span>Attribué à : <b className="text-slate-200">{res.assignedTo}</b></span>
-                      <button className="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white text-xs px-2.5 py-1 rounded-lg font-semibold transition">
-                        Marquer levée
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </main>
-
-        {/* MODAL IA : VOCAL AND AI PROCESSING */}
-        {isRecordingModalOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col justify-between p-6 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" /> Agent Copilote Vocal
-              </span>
-              <button onClick={() => setIsRecordingModalOpen(false)} className="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="text-center space-y-6 max-w-sm mx-auto w-full">
-              <div className="relative inline-block">
-                {isRecording && <div className="absolute -inset-4 rounded-full bg-blue-600/30 animate-ping"></div>}
-                <button 
-                  onClick={isRecording ? handleStopRecording : handleStartRecording} 
-                  className={`w-24 h-24 rounded-full ${isRecording ? 'bg-red-600' : 'bg-blue-600'} text-white flex items-center justify-center shadow-2xl shadow-blue-500/40 relative z-10 transition-transform active:scale-95`}
-                >
-                  <Mic className="w-10 h-10" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-white">{isRecording ? "Écoute en cours..." : "Appuyez sur le micro pour parler"}</h3>
-                <div className="min-h-[90px] bg-slate-900 border border-slate-800 p-3 rounded-2xl text-sm text-slate-300 italic text-left overflow-y-auto">
-                  {transcript || "Exemple : 'Je suis dans la pièce 201, la peinture est terminée mais il manque le joint d'étanchéité sur la fenêtre...'"}
                 </div>
-              </div>
-            </div>
+            );
+        }
 
-            <button 
-              onClick={handleGenerateAIReport}
-              disabled={!transcript || isRecording}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4" /> Générer le Rapport Structuré par IA
-            </button>
-          </div>
-        )}
-
-        {/* BOTTOM NAVIGATION (MOBILE-FIRST THUMB NAV) */}
-        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-3 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none z-30">
-          <div className="flex items-center justify-around pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-800 p-1.5 rounded-3xl shadow-2xl">
-            <BottomNavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<HardHat className="w-5 h-5"/>} label="Accueil" />
-            <BottomNavItem active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} icon={<FileText className="w-5 h-5"/>} label="CR IA" />
-            
-            {/* MICRO BUTTON CENTRAL */}
-            <button 
-              onClick={() => setIsRecordingModalOpen(true)}
-              className="relative -top-4 w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 active:scale-90 transition"
-            >
-              <Mic className="w-6 h-6" />
-            </button>
-
-            <BottomNavItem active={activeTab === 'reserves'} onClick={() => setActiveTab('reserves')} icon={<AlertTriangle className="w-5 h-5"/>} label="Réserves" />
-            <BottomNavItem active={activeTab === 'finances'} onClick={() => setActiveTab('finances')} icon={<Euro className="w-5 h-5"/>} label="Avenants" />
-          </div>
-        </nav>
-
-      </div>
-    </div>
-  );
-}
-
-// Composants auxilaires réutilisables
-function NavItem({ active, onClick, icon, label, count }) {
-  return (
-    <button 
-      onClick={onClick} 
-      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ${active ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
-    >
-      <div className="flex items-center gap-2.5">
-        {icon}
-        <span>{label}</span>
-      </div>
-      {count !== undefined && (
-        <span className={`text-xs px-2 py-0.5 rounded-full ${active ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>{count}</span>
-      )}
-    </button>
-  );
-}
-
-function BottomNavItem({ active, onClick, icon, label }) {
-  return (
-    <button 
-      onClick={onClick} 
-      className={`p-2 rounded-2xl flex flex-col items-center gap-1 transition ${active ? 'text-blue-400 font-semibold' : 'text-slate-500 hover:text
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
